@@ -1,25 +1,13 @@
-import { useCart } from '../contexts/CartContext';
 import CartSidebar from './CartSidebar';
+import CheckoutModal from './CheckoutModal';
 
 const CartIntegration = () => {
-  const {
-    isCartOpen,
-    setIsCartOpen,
-    cartItems,
-    updateQuantity,
-    removeFromCart,
-    getTotalPrice,
-  } = useCart();
-
   return (
-    <CartSidebar
-      isOpen={isCartOpen}
-      onClose={() => setIsCartOpen(false)}
-      cartItems={cartItems}
-      updateQuantity={updateQuantity}
-      removeItem={removeFromCart}
-      totalAmount={getTotalPrice()}
-    />
+    <>
+      <CartSidebar />
+      <CheckoutModal />
+    </>
   );
 };
+
 export default CartIntegration;

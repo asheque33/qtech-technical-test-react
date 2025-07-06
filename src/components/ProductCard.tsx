@@ -1,17 +1,16 @@
-// components/ProductCard.js
 import { ShoppingCart } from 'lucide-react';
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import type { IProduct } from '../types/product';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product }: { product: IProduct }) => {
   const navigate = useNavigate();
-  const { addToCart } = useCart(); // ✅ Cart function নিয়ে আসুন
+  const { addToCart } = useCart();
 
-  // ✅ Add to Cart functionality
-  const handleAddToCart = (e) => {
-    e.stopPropagation(); // Card click prevent করুন
-    addToCart(product, 1); // Product add করুন cart এ
+  //  Add to Cart functionality
+  const handleAddToCart = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    addToCart(product, 1);
   };
 
   const handleProductClick = () => {
@@ -21,12 +20,13 @@ const ProductCard = ({ product }) => {
   return (
     <div
       onClick={handleProductClick}
-      className='bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer'
+      className='w-[200px] bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer flex-shrink-0'
+      style={{ width: '200px' }}
     >
       {/* Product Image */}
       <div className='relative overflow-hidden'>
         <img
-          src={product.images?.[0] || product.image || '/placeholder.jpg'}
+          src={product.images?.[0] || '/placeholder.jpg'}
           alt={product.title}
           className='w-full h-48 object-cover hover:scale-105 transition-transform duration-300'
         />
@@ -35,19 +35,18 @@ const ProductCard = ({ product }) => {
       {/* Product Info */}
       <div className='p-4'>
         {/* Title with Fixed Height */}
-        <div className='h-12 mb-2'>
-          <h3 className='text-lg font-semibold text-gray-800 line-clamp-2 leading-tight'>
+        <div className='h-10 mb-2'>
+          <h3 className='text-base font-medium text-gray-800 line-clamp-2 leading-tight'>
             {product.title}
           </h3>
         </div>
 
-        <div className='flex items-center justify-between mb-4'>
-          <span className='text-xl font-bold text-gray-900'>
+        <div className='flex items-center justify-between mb-2'>
+          <span className='text-lg font-medium text-gray-900'>
             ৳{product.price.toLocaleString()}
           </span>
         </div>
 
-        {/* ✅ Working Add to Cart Button */}
         <button
           onClick={handleAddToCart}
           className='w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center'

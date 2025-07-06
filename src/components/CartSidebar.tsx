@@ -1,24 +1,24 @@
-// components/CartSidebar.js
-import React, { useState } from 'react';
 import { X, Plus, Minus, ShoppingCart } from 'lucide-react';
-import CheckoutModal from '../pages/CheckoutModal';
+import { useCart } from '../contexts/CartContext';
+import type { ICartItem } from '../types/cart-context';
 
-const CartSidebar = ({
-  isOpen,
-  onClose,
-  cartItems,
-  updateQuantity,
-  removeItem,
-  totalAmount,
-}) => {
-  const [showCheckout, setShowCheckout] = useState(false);
+const CartSidebar = () => {
+  const {
+    isCartOpen,
+    setIsCartOpen,
+    cartItems,
+    updateQuantity,
+    removeFromCart,
+    getTotalPrice,
+    handleCheckout,
+    hasAvailableStock,
+    isAboveMinimumQuantity,
+  } = useCart();
 
-  if (!isOpen) return null;
+  if (!isCartOpen) return null;
 
-  const handleCheckout = () => {
-    setShowCheckout(true);
-    onClose(); // ✅ Cart sidebar close করুন
-  };
+  const onClose = () => setIsCartOpen(false);
+  const totalAmount = getTotalPrice();
 
   return (
     <>
@@ -52,13 +52,13 @@ const CartSidebar = ({
           <>
             {/* Cart Items */}
             <div className='flex-1 p-4 space-y-4'>
-              {cartItems.map((item) => (
+              {cartItems.map((item: ICartItem) => (
                 <div
-                  key={item._id} // ✅ _id ব্যবহার করুন
+                  key={item._id}
                   className='flex items-center space-x-4 border-b pb-4'
                 >
                   <img
-                    src={item.images?.[0] || item.image} // ✅ images array handle
+                    src={item.images?.[0] || '/placeholder.jpg'}
                     alt={item.title}
                     className='w-16 h-16 object-cover rounded'
                   />
@@ -70,32 +70,66 @@ const CartSidebar = ({
                       ৳{item.price.toLocaleString()}
                     </p>
 
-                    {/* Quantity Controls */}
+                    <p className='text-xs text-gray-500 mt-1'>
+                      Stock: {item.stockCount || 0} available
+                    </p>
+
+                    {/*  Simple quantity controls, logic in context */}
                     <div className='flex items-center mt-2'>
                       <button
-                        onClick={
-                          () => updateQuantity(item._id, item.quantity - 1) // ✅ _id
+                        onClick={() =>
+                          updateQuantity(item._id, item.quantity - 1)
                         }
-                        className='p-1 hover:bg-gray-100 rounded'
+                        className={`p-1 rounded transition-colors ${
+                          !isAboveMinimumQuantity(item)
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'hover:bg-gray-100 text-gray-700'
+                        }`}
+                        disabled={!isAboveMinimumQuantity(item)}
+                        title={
+                          !isAboveMinimumQuantity(item)
+                            ? 'Minimum quantity is 1'
+                            : 'Decrease quantity'
+                        }
                       >
                         <Minus className='w-4 h-4' />
                       </button>
-                      <span className='px-3 py-1 border border-gray-300 rounded text-sm mx-2'>
+
+                      <span className='px-3 py-1 border border-gray-300 rounded text-sm mx-2 bg-gray-50'>
                         {item.quantity}
                       </span>
+
                       <button
-                        onClick={
-                          () => updateQuantity(item._id, item.quantity + 1) // ✅ _id
+                        onClick={() =>
+                          updateQuantity(item._id, item.quantity + 1)
                         }
-                        className='p-1 hover:bg-gray-100 rounded'
+                        className={`p-1 rounded transition-colors ${
+                          !hasAvailableStock(item)
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'hover:bg-gray-100 text-gray-700'
+                        }`}
+                        disabled={!hasAvailableStock(item)}
+                        title={
+                          !hasAvailableStock(item)
+                            ? `Maximum stock: ${item.stockCount || 1}`
+                            : 'Increase quantity'
+                        }
                       >
                         <Plus className='w-4 h-4' />
                       </button>
                     </div>
+
+                    {!hasAvailableStock(item) && (
+                      <p className='text-xs text-amber-600 mt-1'>
+                        ⚠️ Maximum stock reached
+                      </p>
+                    )}
                   </div>
+
                   <button
-                    onClick={() => removeItem(item._id)} // ✅ _id
-                    className='p-2 text-red-500 hover:bg-red-50 rounded'
+                    onClick={() => removeFromCart(item._id)}
+                    className='p-2 text-red-500 hover:bg-red-50 rounded transition-colors'
+                    title='Remove from cart'
                   >
                     <X className='w-4 h-4' />
                   </button>
@@ -105,30 +139,29 @@ const CartSidebar = ({
 
             {/* Cart Footer */}
             <div className='border-t p-4 space-y-4'>
+              <div className='flex justify-between text-sm text-gray-600'>
+                <span>Total Items:</span>
+                <span>
+                  {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+                </span>
+              </div>
+
               <div className='flex justify-between items-center text-lg font-semibold'>
                 <span>Total:</span>
                 <span>৳{totalAmount.toLocaleString()}</span>
               </div>
+
               <button
-                onClick={handleCheckout} // ✅ Function call করুন
-                className='w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700'
+                onClick={handleCheckout}
+                className='w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium'
               >
-                Checkout
+                Checkout ({cartItems.length}{' '}
+                {cartItems.length === 1 ? 'item' : 'items'})
               </button>
             </div>
           </>
         )}
       </div>
-
-      {/* Checkout Modal */}
-      {showCheckout && (
-        <CheckoutModal
-          isOpen={showCheckout}
-          onClose={() => setShowCheckout(false)}
-          cartItems={cartItems}
-          totalAmount={totalAmount}
-        />
-      )}
     </>
   );
 };

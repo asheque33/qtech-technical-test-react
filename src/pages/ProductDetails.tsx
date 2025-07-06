@@ -1,39 +1,44 @@
+import { Rating, Star } from '@smastrom/react-rating';
+import '@smastrom/react-rating/style.css';
 import {
-  ShoppingCart,
   ArrowLeft,
-  Star,
   Heart,
-  Share2,
-  Plus,
   Minus,
+  Plus,
+  Share2,
+  ShoppingCart,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import type { IProduct } from '../types/product';
 
+interface ApiResponse {
+  success: boolean;
+  data?: IProduct;
+  message?: string;
+}
 const ProductDetails = () => {
-  const { _id } = useParams();
+  const { _id } = useParams<{ _id: string }>();
   const navigate = useNavigate();
+  const [product, setProduct] = useState<IProduct | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [selectedImage, setSelectedImage] = useState<number>(0);
   const { addToCart } = useCart();
 
-  // Add to Cart button এর জন্য এই function যোগ করুন:
-  const handleAddToCart = () => {
-    addToCart(product, quantity); // Selected quantity সহ add করুন
+  const handleAddToCart = (): void => {
+    if (product) {
+      addToCart(product, quantity);
+    }
   };
-  // ✅ Proper state management
-  const [product, setProduct] = useState(null); // null instead of array
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
-    const getProduct = async () => {
+    const getProduct = async (): Promise<void> => {
       try {
         setLoading(true);
         setError(null);
-
-        console.log('Fetching product with ID:', _id);
 
         const response = await fetch(`http://localhost:4000/products/${_id}`);
 
@@ -41,8 +46,7 @@ const ProductDetails = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const result = await response.json();
-        console.log('API Response:', result);
+        const result: ApiResponse = await response.json();
 
         if (result.success && result.data) {
           setProduct(result.data);
@@ -50,8 +54,11 @@ const ProductDetails = () => {
           throw new Error(result.message || 'Product not found');
         }
       } catch (err) {
-        console.error('Error fetching product:', err);
-        setError(err.message);
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('An unknown error occurred');
+        }
       } finally {
         setLoading(false);
       }
@@ -62,7 +69,7 @@ const ProductDetails = () => {
     }
   }, [_id]);
 
-  // ✅ Loading state
+  //  Loading state
   if (loading) {
     return (
       <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
@@ -74,7 +81,7 @@ const ProductDetails = () => {
     );
   }
 
-  // ✅ Error state
+  // Error state
   if (error || !product) {
     return (
       <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
@@ -95,7 +102,7 @@ const ProductDetails = () => {
     );
   }
 
-  const handleQuantityChange = (type) => {
+  const handleQuantityChange = (type: 'increase' | 'decrease') => {
     if (type === 'increase') {
       setQuantity((prev) => Math.min(prev + 1, product.stockCount || 1));
     } else {
@@ -103,25 +110,11 @@ const ProductDetails = () => {
     }
   };
 
-  const renderStars = (rating) => {
-    if (!rating) return null;
-    return [...Array(5)].map((_, index) => (
-      <Star
-        key={index}
-        className={`w-4 h-4 ${
-          index < Math.floor(rating)
-            ? 'text-yellow-400 fill-current'
-            : 'text-gray-300'
-        }`}
-      />
-    ));
-  };
-
   return (
     <div className='min-h-screen bg-gray-50'>
       {/* Breadcrumb */}
-      <div className='bg-white border-b'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4'>
+      <div className=''>
+        <div className='max-w-6xl mx-auto px-4 md:px-6 py-6'>
           <div className='flex items-center space-x-2 text-sm text-gray-500'>
             <button
               onClick={() => navigate('/')}
@@ -139,7 +132,7 @@ const ProductDetails = () => {
       </div>
 
       {/* Product Detail Content */}
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+      <div className='max-w-6xl mx-auto px-4 md:px-6 py-8'>
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
           {/* Product Images */}
           <div className='space-y-4'>
@@ -201,7 +194,18 @@ const ProductDetails = () => {
 
               <div className='flex items-center space-x-4 mb-4'>
                 <div className='flex items-center space-x-1'>
-                  {renderStars(product.rating)}
+                  <Rating
+                    style={{
+                      maxWidth: 100,
+                    }}
+                    itemStyles={{
+                      itemShapes: Star,
+                      activeFillColor: 'oklch(85.2% 0.199 91.936)',
+                      inactiveFillColor: 'oklch(92.2% 0 0)',
+                    }}
+                    value={product.rating}
+                    readOnly
+                  />
                   <span className='text-sm text-gray-600 ml-1'>
                     {product.rating || 0} ({product.reviewCount || 0} reviews)
                   </span>
@@ -273,7 +277,7 @@ const ProductDetails = () => {
               {/* Action Buttons */}
               <div className='flex space-x-4'>
                 <button
-                  onClick={handleAddToCart} // ✅ Function call করুন
+                  onClick={handleAddToCart}
                   className='flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center font-medium disabled:opacity-50'
                   disabled={!product.inStock}
                 >
