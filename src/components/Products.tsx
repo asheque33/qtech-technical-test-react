@@ -6,7 +6,11 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   useEffect(() => {
     const getProducts = async () => {
-      const response = await fetch('http://localhost:4000/products');
+      const baseUrl =
+        import.meta.env.MODE === 'production'
+          ? import.meta.env.VITE_SERVER_REMOTE_URI
+          : import.meta.env.VITE_SERVER_LOCAL_URI;
+      const response = await fetch(`${baseUrl}/products`);
       const { data } = await response.json();
       setProducts(data);
     };
